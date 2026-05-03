@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #fff0e6 0%, #ffe4f0 30%, #e6f3ff 70%, #f0fff4 100%);
+        font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px;
+        text-align: center;
+      }
+      h1 {
+        font-size: 120px;
+        font-weight: 900;
+        color: #ff6b8a;
+        text-shadow: 0 8px 24px rgba(255,107,138,0.25);
+        line-height: 1.2;
+      }
+      .subtitle {
+        font-size: 64px;
+        font-weight: 700;
+        color: #5a7d9c;
+        margin-top: 16px;
+      }
+      .game-name {
+        font-size: 140px;
+        font-weight: 900;
+        color: #ff8a5c;
+        text-shadow: 0 8px 24px rgba(255,138,92,0.3);
+      }
+      .age-badge {
+        display: inline-block;
+        font-size: 52px;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(135deg, #5ab7ff, #54d8a8);
+        border-radius: 60px;
+        padding: 16px 48px;
+        margin-top: 24px;
+        box-shadow: 0 8px 24px rgba(90,183,255,0.3);
+      }
+      .material-icon {
+        font-size: 80px;
+        margin-bottom: 16px;
+      }
+      .material-text {
+        font-size: 56px;
+        font-weight: 700;
+        color: #5a6a7a;
+        line-height: 1.4;
+      }
+      .highlight {
+        color: #ff6b8a;
+        font-weight: 900;
+      }
+      .step-text {
+        font-size: 50px;
+        font-weight: 600;
+        color: #4a5a6a;
+        line-height: 1.5;
+        max-width: 1400px;
+      }
+      .safety-box {
+        background: rgba(255,216,77,0.2);
+        border: 4px solid #ffd84d;
+        border-radius: 48px;
+        padding: 32px 64px;
+        margin-top: 24px;
+      }
+      .safety-text {
+        font-size: 42px;
+        font-weight: 700;
+        color: #c07a2e;
+      }
+      .benefit-text {
+        font-size: 48px;
+        font-weight: 700;
+        color: #54a88a;
+      }
+      .label-tag {
+        display: inline-block;
+        font-size: 36px;
+        font-weight: 800;
+        color: #fff;
+        background: #ff6b8a;
+        border-radius: 20px;
+        padding: 8px 28px;
+        margin-bottom: 12px;
+      }
+      /* Fix for 0-indexed: use z-index to layer scenes */
+      .scene-0 { z-index: 10; }
+      .scene-1 { z-index: 9; }
+      .scene-2 { z-index: 8; }
+      .scene-3 { z-index: 7; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="daily-game"
+      data-start="0"
+      data-duration="15"
+      data-width="1920"
+      data-height="1080"
+    >
+
+      <!-- Scene 1: Title Card (0:00 - 0:03) -->
+      <div id="scene1" class="scene scene-0 clip" data-start="0" data-duration="3.5" data-track-index="0">
+        <h1 id="titleMain">每日遊戲處方簽</h1>
+        <div id="titleSub" class="subtitle" style="opacity:0">Day 1 · 專屬寶寶的遊戲時光</div>
+      </div>
+
+      <!-- Scene 2: Game Name + Age (3.5 - 0:07) -->
+      <div id="scene2" class="scene scene-1 clip" data-start="3.5" data-duration="3.5" data-track-index="0" style="opacity:0">
+        <div class="game-name" id="gameName">聽聲辨位</div>
+        <div class="age-badge" id="ageBadge" style="opacity:0">👶 6-12 個月</div>
+      </div>
+
+      <!-- Scene 3: Materials + How to Play (7 - 0:11) -->
+      <div id="scene3" class="scene scene-2 clip" data-start="7" data-duration="4" data-track-index="0" style="opacity:0">
+        <div class="label-tag" id="tag3">🎲 準備</div>
+        <div class="material-text" id="matText" style="opacity:0">
+          <span class="material-icon">🔔</span><br/>
+          鈴鐺或搖鈴
+        </div>
+        <div class="step-text" id="stepText" style="opacity:0; margin-top:24px">
+          在寶寶背後輕輕搖鈴鐺<br/>
+          讓寶寶<span class="highlight">轉頭尋找</span>聲音來源
+        </div>
+      </div>
+
+      <!-- Scene 4: Safety + Benefit (11 - 0:15) -->
+      <div id="scene4" class="scene scene-3 clip" data-start="11" data-duration="4" data-track-index="0" style="opacity:0">
+        <div class="label-tag" id="tag4" style="background:#5ab7ff">⚠️ 安全提醒</div>
+        <div class="safety-box" id="safetyBox" style="opacity:0">
+          <div class="safety-text">🔊 音量適中，不要太靠近耳朵</div>
+        </div>
+        <div class="benefit-text" id="benefitText" style="opacity:0; margin-top:20px">
+          ✨ 訓練聽覺定位能力 · 刺激大腦發展
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene 1: Title
+      tl.from("#titleMain", { opacity: 0, y: -60, scale: 0.8, duration: 0.8, ease: "back.out(1.5)" }, 0);
+      tl.to("#titleSub", { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 1.2);
+      // Gentle pulse on title
+      tl.to("#titleMain", { scale: 1.03, duration: 0.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 1.8);
+
+      // Scene 2: Game Name entrance
+      tl.to("#scene2", { opacity: 1, duration: 0.3 }, 3.5);
+      tl.from("#gameName", { opacity: 0, scale: 0.3, rotation: -10, duration: 0.8, ease: "elastic.out(1.2, 0.4)" }, 3.6);
+      tl.to("#ageBadge", { opacity: 1, y: 0, duration: 0.5, ease: "bounce.out" }, 4.2);
+
+      // Scene 3: Materials
+      tl.to("#scene3", { opacity: 1, duration: 0.3 }, 7);
+      tl.from("#tag3", { opacity: 0, y: -20, duration: 0.4, ease: "power2.out" }, 7.1);
+      tl.to("#matText", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 7.5);
+      tl.to("#stepText", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 8.2);
+      // highlight pulse
+      tl.to(".highlight", { scale: 1.1, color: "#ff4a6a", duration: 0.4, ease: "sine.inOut", yoyo: true, repeat: 1 }, 9.0);
+
+      // Scene 4: Safety + Benefit
+      tl.to("#scene4", { opacity: 1, duration: 0.3 }, 11);
+      tl.from("#tag4", { opacity: 0, x: -30, duration: 0.4, ease: "power2.out" }, 11.1);
+      tl.to("#safetyBox", { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.2)" }, 11.5);
+      tl.to("#benefitText", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 12.5);
+      // Final hold
+      tl.to({}, { duration: 1.5 }, 13.5);
+
+      window.__timelines["daily-game"] = tl;
+    </script>
+  </body>
+</html>

@@ -70,16 +70,40 @@ def run_setup():
         print("❗ 上傳完成後通知我，我來繼續下一步。")
         sys.exit(1)
 
-    flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_SECRET_PATH), SCOPES)
+    from google_auth_oauthlib.flow import Flow
+    flow = Flow.from_client_secrets_file(
+        str(CLIENT_SECRET_PATH),
+        scopes=SCOPES,
+        redirect_uri="urn:ietf:wg:oauth:2.0:oob",
+    )
+
+    auth_url, _ = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent",
+    )
 
     print()
     print("=" * 60)
-    print("  📱 請用手機完成以下步驟：")
+    print("  📱 請在手機上完成以下步驟：")
+    print("=" * 60)
+    print()
+    print(f"  1. 用手機打開這個網址：")
+    print()
+    print(f"     {auth_url}")
+    print()
+    print("  2. 登入你的 Google 帳號")
+    print("  3. 按「繼續」授權")
+    print("  4. 複製出現的授權碼")
+    print()
+    print("  5. 把授權碼貼給我，我來完成設定")
     print("=" * 60)
     print()
 
-    # Use run_console for device-code-style flow
-    creds = flow.run_console()
+    auth_code = input("請貼上授權碼 > ").strip()
+
+    flow.fetch_token(code=auth_code)
+    creds = flow.credentials
 
     TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     TOKEN_PATH.write_text(creds.to_json())
@@ -170,12 +194,22 @@ def main():
 
     title = args.title
     if args.day:
-        title = f"每日遊戲處方簽 Day {args.day} - 聽聲辨位"
+        # Read games.json to get the correct game name for this day
+        game_file = Path(__file__).resolve().parent / "games.json"
+        if game_file.exists():
+            with open(game_file, "r", encoding="utf-8") as f:
+                games = json.load(f)
+            game_index = (args.day - 1) % len(games)
+            game = games[game_index]
+            title = f"每日遊戲處方簽 Day {args.day} - {game['name']}"
+            desc = f"今天的寶寶遊戲時間！來玩「{game['name']}」{game['icon']}\n\n{game['description']}\n\n🛡️ {game['safety']}\n✨ {game['benefit']}\n\n#寶寶遊戲 #幼兒教育 #親子互動 #嬰兒發展"
+        else:
+            title = f"每日遊戲處方簽 Day {args.day}"
 
     upload_video(
         video_path=str(video_path),
         title=title,
-        description=args.description,
+        description=desc if args.day else args.description,
         privacy_status=args.privacy,
     )
 

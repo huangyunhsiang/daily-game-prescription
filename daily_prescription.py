@@ -103,6 +103,31 @@ def main():
         json.dump(status, f, indent=2, ensure_ascii=False)
 
     log(f"📊 狀態已儲存: {STATUS_FILE}")
+
+    # Upload to YouTube
+    upload_script = PROJECT_DIR / "upload_youtube.py"
+    if upload_script.exists():
+        log(f"📤 正在上傳至 YouTube...")
+        upload_result = subprocess.run(
+            ["python3", str(upload_script), str(output_path), "--day", str(day_num), "--privacy", "unlisted"],
+            cwd=PROJECT_DIR,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env={
+                **os.environ,
+                "PATH": f"{Path.home()}/.n/bin:{os.environ.get('PATH', '')}",
+            },
+        )
+        if upload_result.returncode == 0:
+            log(f"✅ YouTube 上傳成功！")
+            # Extract YouTube URL
+            for line in upload_result.stdout.split("\n"):
+                if "youtu.be" in line or "youtube.com" in line:
+                    log(f"   {line.strip()}")
+        else:
+            log(f"⚠️ YouTube 上傳失敗: {upload_result.stderr[:200]}")
+
     log(f"✅ 完成！")
 
 

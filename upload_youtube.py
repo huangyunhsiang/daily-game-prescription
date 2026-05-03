@@ -42,7 +42,7 @@ def get_authenticated_service():
 
 
 def run_setup():
-    """Run OAuth setup flow."""
+    """Run OAuth setup flow (supports mobile/headless via run_console)."""
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     if not CLIENT_SECRET_PATH.exists():
@@ -50,20 +50,36 @@ def run_setup():
         print("  YouTube 上傳設定 - OAuth 授權")
         print("=" * 60)
         print()
-        print("請先到 Google Cloud Console 建立 OAuth 2.0 憑證：")
+        print("請先用手機完成以下步驟：")
         print()
-        print("  1. 開啟 https://console.cloud.google.com/apis/credentials")
-        print("  2. 選擇專案或建立新專案")
+        print("  1. 在手機瀏覽器打開：")
+        print("     https://console.cloud.google.com/apis/credentials")
+        print()
+        print("  2. 建立新專案（或選現有專案）")
         print("  3. 啟用「YouTube Data API v3」")
-        print("  4. 建立 OAuth 2.0 用戶端 ID (應用程式類型: 桌面應用程式)")
-        print("  5. 下載 JSON 檔案")
-        print(f"  6. 存放到: {CLIENT_SECRET_PATH}")
+        print("  4. 建立「OAuth 2.0 用戶端 ID」")
+        print("     → 應用程式類型選「桌面應用程式」")
+        print("     → 名稱隨便填，例如「Herme Agent」")
         print()
-        print("下載後重新執行: python upload_youtube.py --setup")
+        print("  5. 建立完成後，點「下載 JSON」")
+        print()
+        print(f"  6. 把下載的 JSON 檔案上傳到 Google Drive：")
+        print("     → KASPER_Shared/ 資料夾")
+        print("     → 重新命名為 youtube_client_secret.json")
+        print()
+        print("❗ 上傳完成後通知我，我來繼續下一步。")
         sys.exit(1)
 
     flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_SECRET_PATH), SCOPES)
-    creds = flow.run_local_server(port=8080, open_browser=False)
+
+    print()
+    print("=" * 60)
+    print("  📱 請用手機完成以下步驟：")
+    print("=" * 60)
+    print()
+
+    # Use run_console for device-code-style flow
+    creds = flow.run_console()
 
     TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     TOKEN_PATH.write_text(creds.to_json())
@@ -115,6 +131,7 @@ def main():
     parser = argparse.ArgumentParser(description="YouTube 上傳工具 - 每日遊戲處方簽")
     parser.add_argument("video", nargs="?", help="MP4 影片路徑")
     parser.add_argument("--setup", action="store_true", help="執行 OAuth 授權設定")
+    parser.add_argument("--download-secret", action="store_true", help="從 Google Drive 下載 client secret")
     parser.add_argument("--title", default="每日遊戲處方簽 - 聽聲辨位", help="影片標題")
     parser.add_argument("--description", default="今天的寶寶遊戲時間！來玩「聽聲辨位」🎯\n\n#寶寶遊戲 #幼兒教育 #親子互動 #嬰兒發展", help="影片說明")
     parser.add_argument("--privacy", choices=["public", "unlisted", "private"], default="unlisted", help="隱私設定")
@@ -123,6 +140,22 @@ def main():
 
     if args.setup:
         run_setup()
+        return
+
+    if args.download_secret:
+        print("📥 正在從 Google Drive 下載 youtube_client_secret.json...")
+        import subprocess as sp
+        result = sp.run(
+            ["rclone", "copy", "mydrive:KASPER_Shared/youtube_client_secret.json",
+             str(CLIENT_SECRET_PATH.parent)],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0 and CLIENT_SECRET_PATH.exists():
+            print(f"✅ 成功下載至 {CLIENT_SECRET_PATH}")
+            print("📱 現在執行: python3 upload_youtube.py --setup")
+        else:
+            print("❌ 下載失敗。請確認已上傳至 KASPER_Shared/youtube_client_secret.json")
+            print(f"   錯誤: {result.stderr[:200]}")
         return
 
     if not args.video:

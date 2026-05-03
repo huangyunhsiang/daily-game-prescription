@@ -109,7 +109,7 @@ def main():
     if upload_script.exists():
         log(f"📤 正在上傳至 YouTube...")
         upload_result = subprocess.run(
-            ["python3", str(upload_script), str(output_path), "--day", str(day_num), "--privacy", "unlisted"],
+            ["python3", str(upload_script), str(output_path), "--day", str(day_num), "--privacy", "public"],
             cwd=PROJECT_DIR,
             capture_output=True,
             text=True,

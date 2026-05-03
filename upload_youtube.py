@@ -15,7 +15,11 @@ import os
 import sys
 from pathlib import Path
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+]
 TOKEN_PATH = Path.home() / ".hermes" / "youtube_token.json"
 CLIENT_SECRET_PATH = Path.home() / ".hermes" / "youtube_client_secret.json"
 
@@ -41,8 +45,8 @@ def get_authenticated_service():
     return build("youtube", "v3", credentials=creds)
 
 
-def run_setup():
-    """Run OAuth setup flow (supports mobile/headless via run_console)."""
+def run_setup(auth_code=None):
+    """Run OAuth setup flow (supports mobile/headless)."""
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     if not CLIENT_SECRET_PATH.exists():
@@ -83,24 +87,29 @@ def run_setup():
         prompt="consent",
     )
 
-    print()
-    print("=" * 60)
-    print("  📱 請在手機上完成以下步驟：")
-    print("=" * 60)
-    print()
-    print(f"  1. 用手機打開這個網址：")
-    print()
-    print(f"     {auth_url}")
-    print()
-    print("  2. 登入你的 Google 帳號")
-    print("  3. 按「繼續」授權")
-    print("  4. 複製出現的授權碼")
-    print()
-    print("  5. 把授權碼貼給我，我來完成設定")
-    print("=" * 60)
-    print()
+    if auth_code:
+        # Code was provided via CLI, use it directly
+        pass
+    else:
+        print()
+        print("=" * 60)
+        print("  📱 請在手機上完成以下步驟：")
+        print("=" * 60)
+        print()
 
-    auth_code = input("請貼上授權碼 > ").strip()
+        print(f"  1. 用手機打開這個網址：")
+        print()
+        print(f"     {auth_url}")
+        print()
+        print("  2. 登入你的 Google 帳號")
+        print("  3. 按「繼續」授權")
+        print("  4. 複製出現的授權碼")
+        print()
+        print("  5. 把授權碼貼給我，我來完成設定")
+        print("=" * 60)
+        print()
+
+        auth_code = input("請貼上授權碼 > ").strip()
 
     flow.fetch_token(code=auth_code)
     creds = flow.credentials
@@ -108,7 +117,6 @@ def run_setup():
     TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     TOKEN_PATH.write_text(creds.to_json())
     print(f"✅ 授權成功！Token 已儲存至 {TOKEN_PATH}")
-
 
 def upload_video(
     video_path,
@@ -155,6 +163,7 @@ def main():
     parser = argparse.ArgumentParser(description="YouTube 上傳工具 - 每日遊戲處方簽")
     parser.add_argument("video", nargs="?", help="MP4 影片路徑")
     parser.add_argument("--setup", action="store_true", help="執行 OAuth 授權設定")
+    parser.add_argument("--code", help="OAuth 授權碼（配合 --setup 使用，跳過互動輸入）")
     parser.add_argument("--download-secret", action="store_true", help="從 Google Drive 下載 client secret")
     parser.add_argument("--title", default="每日遊戲處方簽 - 聽聲辨位", help="影片標題")
     parser.add_argument("--description", default="今天的寶寶遊戲時間！來玩「聽聲辨位」🎯\n\n#寶寶遊戲 #幼兒教育 #親子互動 #嬰兒發展", help="影片說明")
@@ -163,7 +172,7 @@ def main():
     args = parser.parse_args()
 
     if args.setup:
-        run_setup()
+        run_setup(auth_code=args.code)
         return
 
     if args.download_secret:

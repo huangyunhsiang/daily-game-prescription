@@ -11,6 +11,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from generate_daily_prescription import generate as generate_compositions
 
 PROJECT_DIR = Path(__file__).resolve().parent
 COMPOSITIONS_DIR = PROJECT_DIR / "compositions"
@@ -43,8 +44,11 @@ def main():
 
     comp_path = COMPOSITIONS_DIR / f"game-{game['id']:02d}.html"
     if not comp_path.exists():
-        log(f"❌ 找不到模板: {comp_path}")
-        sys.exit(1)
+        log(f"⚠️ 找不到模板，正在重新產生: {comp_path}")
+        generate_compositions(index_game_id=game["id"])
+        if not comp_path.exists():
+            log(f"❌ 重新產生後仍找不到模板: {comp_path}")
+            sys.exit(1)
 
     # Copy to index.html
     shutil.copy2(comp_path, INDEX_HTML)
@@ -52,7 +56,7 @@ def main():
 
     # Render
     result = subprocess.run(
-        ["npx", "--yes", "hyperframes@0.4.42", "render"],
+        ["npm", "run", "render"],
         cwd=PROJECT_DIR,
         capture_output=True,
         text=True,

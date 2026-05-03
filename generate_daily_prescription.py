@@ -1,4 +1,26 @@
-<!doctype html>
+#!/usr/bin/env python3
+"""
+Generate HyperFrames compositions for the daily game prescription series.
+
+The same template is used for index.html and every compositions/game-XX.html
+file. Each generated file embeds one game as window._gameData near the top of
+the page so the renderer has no external data dependency.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).resolve().parent
+GAMES_FILE = PROJECT_DIR / "games.json"
+COMPOSITIONS_DIR = PROJECT_DIR / "compositions"
+INDEX_HTML = PROJECT_DIR / "index.html"
+INDEX_BACKUP = PROJECT_DIR / "index-backup.html"
+
+
+TEMPLATE = """<!doctype html>
 <html lang="zh-Hant-TW">
   <head>
     <meta charset="UTF-8" />
@@ -8,17 +30,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <script>
-      window._gameData = {
-        "id": 1,
-        "name": "聽聲辨位",
-        "age_min": 6,
-        "age_max": 12,
-        "materials": "鈴鐺或搖鈴",
-        "description": "在寶寶背後輕輕搖鈴鐺，讓寶寶轉頭尋找聲音來源",
-        "safety": "音量適中，不要太靠近耳朵",
-        "benefit": "訓練聽覺定位能力",
-        "icon": "🔔"
-};
+      window._gameData = __GAME_DATA_JSON__;
     </script>
     <style>
       * {
@@ -847,3 +859,46 @@
     </script>
   </body>
 </html>
+"""
+
+
+def load_games() -> list[dict]:
+    with GAMES_FILE.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def render_html(game: dict) -> str:
+    game_json = json.dumps(game, ensure_ascii=False, indent=8)
+    return TEMPLATE.replace("__GAME_DATA_JSON__", game_json)
+
+
+def write_file(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def generate(index_game_id: int = 1) -> None:
+    games = load_games()
+    game_by_id = {int(game["id"]): game for game in games}
+    index_game = game_by_id.get(index_game_id, games[0])
+
+    write_file(INDEX_HTML, render_html(index_game))
+    write_file(INDEX_BACKUP, render_html(index_game))
+
+    COMPOSITIONS_DIR.mkdir(exist_ok=True)
+    for game in games:
+        path = COMPOSITIONS_DIR / f"game-{int(game['id']):02d}.html"
+        write_file(path, render_html(game))
+
+    print(f"Generated index.html, index-backup.html, and {len(games)} compositions.")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate Daily Game Prescription HyperFrames compositions.")
+    parser.add_argument("--index-game-id", type=int, default=1, help="Game ID to embed in index.html and index-backup.html.")
+    args = parser.parse_args()
+    generate(index_game_id=args.index_game_id)
+
+
+if __name__ == "__main__":
+    main()
